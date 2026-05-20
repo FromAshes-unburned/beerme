@@ -89,7 +89,7 @@ export default function BreweryPage() {
                 <div key={cat} className="mb-6">
                   <h2 className="text-sm font-semibold uppercase tracking-wider text-gray-400 mb-3">{cat}</h2>
                   <div className="flex flex-col gap-3">
-                    {brewery.menu?.filter((m) => m.category === cat).map((item) => (
+                    {brewery.menu?.filter((m) => (m.category ?? 'Beer') === cat).map((item) => (
                       <div key={item.id} className="bg-white rounded-xl p-4 flex items-center justify-between shadow-sm">
                         <div>
                           <p className="font-medium">{item.name}</p>
