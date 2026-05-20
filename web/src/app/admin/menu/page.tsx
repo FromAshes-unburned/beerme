@@ -95,6 +95,19 @@ export default function AdminMenuPage() {
               <input type="number" step="0.1" min="0" max="100" value={form.abv ?? ''} onChange={set('abv')}
                 className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" />
             </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Container type</label>
+              <select value={(form as Record<string, unknown>).container_type as string ?? ''} onChange={(e) => setForm((f) => ({ ...f, container_type: e.target.value }))}
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400">
+                <option value="">Select…</option>
+                <option value="can_4pack">Can 4-pack</option>
+                <option value="can_6pack">Can 6-pack</option>
+                <option value="crowler">Crowler</option>
+                <option value="growler">Growler</option>
+                <option value="bottle">Bottle</option>
+                <option value="case">Case</option>
+              </select>
+            </div>
             <div className="sm:col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
               <textarea value={form.description ?? ''} onChange={set('description')} rows={2}
