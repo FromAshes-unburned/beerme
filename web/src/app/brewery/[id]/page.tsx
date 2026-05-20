@@ -64,7 +64,7 @@ export default function BreweryPage() {
     }
   }
 
-  const categories = [...new Set(brewery?.menu?.map((m) => m.category) ?? [])];
+  const categories = [...new Set(brewery?.menu?.map((m) => m.category ?? 'Beer') ?? [])];
 
   return (
     <div className="min-h-screen bg-gray-50">
