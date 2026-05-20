@@ -62,23 +62,16 @@ router.get('/available-orders', authenticate, requireRole('driver'), async (req,
         da.street as delivery_street, da.city as delivery_city,
         (
           6371 * acos(
-            cos(radians($1)) * cos(radians(b.lat)) *
+            least(1.0, cos(radians($1)) * cos(radians(b.lat)) *
             cos(radians(b.lng) - radians($2)) +
-            sin(radians($1)) * sin(radians(b.lat))
+            sin(radians($1)) * sin(radians(b.lat)))
           )
         ) as brewery_distance_km
       FROM orders o
       JOIN breweries b ON b.id = o.brewery_id
-      JOIN delivery_addresses da ON da.id = o.delivery_address_id
+      LEFT JOIN delivery_addresses da ON da.id = o.delivery_address_id
       WHERE o.status = 'ready'
         AND o.driver_id IS NULL
-      HAVING (
-        6371 * acos(
-          cos(radians($1)) * cos(radians(b.lat)) *
-          cos(radians(b.lng) - radians($2)) +
-          sin(radians($1)) * sin(radians(b.lat))
-        )
-      ) < 16  -- 16km ≈ 10 miles
       ORDER BY brewery_distance_km ASC
     `, [lat || 38.2527, lng || -85.7585]);  // Default to Louisville coords
 
