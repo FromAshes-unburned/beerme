@@ -2,6 +2,7 @@ const express = require('express');
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const { Pool } = require('pg');
 const { authenticate, requireRole, requireIdVerified } = require('../middleware/auth');
+const { sendSms, STATUS_MESSAGES } = require('../services/sms');
 
 const router = express.Router();
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
@@ -109,6 +110,14 @@ router.post('/', authenticate, requireRole('customer'), requireIdVerified, async
       orderNumber: order.order_number,
       total: order.total,
     });
+
+    // SMS confirmation to customer
+    if (req.user.phone) {
+      sendSms(
+        req.user.phone,
+        `🍺 Beer Me: Order placed at ${brewery.name}! Total: $${Number(total).toFixed(2)}. We'll text you updates.`
+      );
+    }
 
     res.status(201).json({
       orderId: order.id,
@@ -227,6 +236,24 @@ router.patch('/:id/status', authenticate, async (req, res) => {
 
     // Broadcast status update to all parties tracking this order
     req.io.to(`order_${req.params.id}`).emit('status_update', { orderId: req.params.id, status });
+
+    // SMS the customer for meaningful status changes
+    const msgFn = STATUS_MESSAGES[status];
+    if (msgFn) {
+      const customerResult = await pool.query(
+        'SELECT phone FROM users WHERE id = $1',
+        [orderResult.rows[0].customer_id]
+      );
+      const customerPhone = customerResult.rows[0]?.phone;
+      if (customerPhone) {
+        const breweryResult2 = await pool.query(
+          'SELECT name FROM breweries WHERE id = $1',
+          [orderResult.rows[0].brewery_id]
+        );
+        const breweryName = breweryResult2.rows[0]?.name ?? 'the brewery';
+        sendSms(customerPhone, msgFn(breweryName));
+      }
+    }
 
     res.json({ orderId: req.params.id, status });
   } catch (err) {
