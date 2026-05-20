@@ -1,7 +1,23 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-import { Loader } from '@googlemaps/js-api-loader';
+
+let mapsPromise: Promise<void> | null = null;
+
+function loadGoogleMaps(key: string): Promise<void> {
+  if (typeof window === 'undefined') return Promise.resolve();
+  if (window.google?.maps?.Map) return Promise.resolve();
+  if (mapsPromise) return mapsPromise;
+  mapsPromise = new Promise<void>((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = `https://maps.googleapis.com/maps/api/js?key=${key}&libraries=marker&v=weekly`;
+    s.async = true;
+    s.onload = () => resolve();
+    s.onerror = () => reject(new Error('Google Maps failed to load'));
+    document.head.appendChild(s);
+  });
+  return mapsPromise;
+}
 
 interface Props {
   driverLat: number;
@@ -18,12 +34,9 @@ export default function DriverMap({ driverLat, driverLng, deliveryLat, deliveryL
   useEffect(() => {
     if (!ref.current) return;
     const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY ?? '';
-    const loader = new Loader({ apiKey, version: 'weekly' });
 
-    loader.importLibrary('maps').then(async ({ Map }) => {
-      const { AdvancedMarkerElement } = await loader.importLibrary('marker') as google.maps.MarkerLibrary;
-
-      const map = new Map(ref.current!, {
+    loadGoogleMaps(apiKey).then(() => {
+      const map = new google.maps.Map(ref.current!, {
         center: { lat: driverLat, lng: driverLng },
         zoom: 14,
         mapId: 'beerme_driver_map',
@@ -32,29 +45,29 @@ export default function DriverMap({ driverLat, driverLng, deliveryLat, deliveryL
       });
       mapRef.current = map;
 
-      // Delivery destination pin
       if (deliveryLat && deliveryLng) {
         const dest = document.createElement('div');
         dest.innerHTML = '📍';
         dest.style.fontSize = '28px';
-        new AdvancedMarkerElement({ map, position: { lat: deliveryLat, lng: deliveryLng }, content: dest });
+        new google.maps.marker.AdvancedMarkerElement({
+          map,
+          position: { lat: deliveryLat, lng: deliveryLng },
+          content: dest,
+        });
       }
 
-      // Driver pin
       const car = document.createElement('div');
       car.innerHTML = '🚗';
       car.style.fontSize = '28px';
-      const marker = new AdvancedMarkerElement({
+      markerRef.current = new google.maps.marker.AdvancedMarkerElement({
         map,
         position: { lat: driverLat, lng: driverLng },
         content: car,
       });
-      markerRef.current = marker;
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // init once
+  }, []);
 
-  // Update driver position live
   useEffect(() => {
     if (!markerRef.current || !mapRef.current) return;
     const pos = { lat: driverLat, lng: driverLng };

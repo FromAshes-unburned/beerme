@@ -1,8 +1,24 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-import { Loader } from '@googlemaps/js-api-loader';
 import type { Brewery } from '@/lib/api';
+
+let mapsPromise: Promise<void> | null = null;
+
+function loadGoogleMaps(key: string): Promise<void> {
+  if (typeof window === 'undefined') return Promise.resolve();
+  if (window.google?.maps?.Map) return Promise.resolve();
+  if (mapsPromise) return mapsPromise;
+  mapsPromise = new Promise<void>((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = `https://maps.googleapis.com/maps/api/js?key=${key}&libraries=marker&v=weekly`;
+    s.async = true;
+    s.onload = () => resolve();
+    s.onerror = () => reject(new Error('Google Maps failed to load'));
+    document.head.appendChild(s);
+  });
+  return mapsPromise;
+}
 
 interface Props {
   breweries: Brewery[];
@@ -18,39 +34,36 @@ export default function BreweryMap({ breweries, userLat, userLng, onSelect }: Pr
     if (!ref.current || !breweries.length) return;
     const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY ?? '';
 
-    const loader = new Loader({ apiKey, version: 'weekly' });
-    loader.importLibrary('maps').then(async ({ Map }) => {
-      const { AdvancedMarkerElement } = await loader.importLibrary('marker') as google.maps.MarkerLibrary;
-
+    loadGoogleMaps(apiKey).then(() => {
       const center = breweries[0]
         ? { lat: breweries[0].lat, lng: breweries[0].lng }
-        : { lat: 38.2527, lng: -85.7585 }; // Louisville default
+        : { lat: 38.2527, lng: -85.7585 };
 
-      const map = new Map(ref.current!, {
+      const map = new google.maps.Map(ref.current!, {
         center: userLat && userLng ? { lat: userLat, lng: userLng } : center,
         zoom: 12,
         mapId: 'beerme_map',
-        disableDefaultUI: false,
         zoomControl: true,
       });
 
-      // User location pin
       if (userLat && userLng) {
         const dot = document.createElement('div');
         dot.style.cssText =
           'width:14px;height:14px;background:#3b82f6;border:2px solid white;border-radius:50%;box-shadow:0 2px 6px rgba(0,0,0,0.3)';
-        new AdvancedMarkerElement({ map, position: { lat: userLat, lng: userLng }, content: dot });
+        new google.maps.marker.AdvancedMarkerElement({
+          map,
+          position: { lat: userLat, lng: userLng },
+          content: dot,
+        });
       }
 
-      // Brewery pins
       breweries.forEach((b) => {
         if (!b.lat || !b.lng) return;
         const pin = document.createElement('div');
         pin.innerHTML = '🏭';
         pin.style.cssText = 'font-size:28px;cursor:pointer;';
-        pin.title = b.name;
 
-        const marker = new AdvancedMarkerElement({
+        const marker = new google.maps.marker.AdvancedMarkerElement({
           map,
           position: { lat: b.lat, lng: b.lng },
           content: pin,
