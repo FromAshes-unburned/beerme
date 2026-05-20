@@ -18,7 +18,16 @@ const io = new Server(httpServer, {
   cors: { origin: '*', methods: ['GET', 'POST'] }
 });
 
-app.use(cors());
+app.use(cors({
+  origin: [
+    'https://beermelou.com',
+    'https://www.beermelou.com',
+    'https://beerme-seven.vercel.app',
+    /\.vercel\.app$/,
+    'http://localhost:3000',
+  ],
+  credentials: true,
+}));
 // Raw body for Stripe webhooks (must come before express.json)
 app.use('/webhooks/stripe', express.raw({ type: 'application/json' }));
 app.use(express.json());
