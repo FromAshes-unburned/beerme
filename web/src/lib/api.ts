@@ -160,7 +160,7 @@ export const connectSocket = () => {
 };
 
 export const trackOrder = (
-  orderId: number,
+  orderId: number | string,
   onLocation: (data: { lat: number; lng: number }) => void,
   onStatus: (data: { status: string }) => void
 ) => {

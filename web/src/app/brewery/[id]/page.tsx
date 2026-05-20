@@ -23,7 +23,7 @@ export default function BreweryPage() {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    getBrewery(Number(id)).then(setBrewery).catch(() => setError('Could not load brewery.'));
+    getBrewery(id).then(setBrewery).catch(() => setError('Could not load brewery.'));
   }, [id]);
 
   function addToCart(item: MenuItem) {
@@ -51,7 +51,7 @@ export default function BreweryPage() {
     setError('');
     try {
       const order = await placeOrder(
-        Number(id),
+        id,
         cart.map((ci) => ({ menuItemId: ci.item.id, quantity: ci.qty })),
         1,
         tip,

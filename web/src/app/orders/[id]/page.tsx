@@ -24,10 +24,10 @@ export default function OrderTrackingPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    getOrder(Number(id)).then(setOrder).finally(() => setLoading(false));
+    getOrder(id).then(setOrder).finally(() => setLoading(false));
 
     const unsub = trackOrder(
-      Number(id),
+      id,
       () => {},
       ({ status }) => setOrder((o) => o ? { ...o, status } : o)
     );
