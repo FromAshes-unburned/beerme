@@ -147,6 +147,47 @@ export interface Analytics {
 export const getBreweryAnalytics = (breweryId: number | string) =>
   request<Analytics>('GET', `/breweries/${breweryId}/analytics`);
 
+// ---- Driver ----
+export interface DriverOrder {
+  id: number | string;
+  brewery_name: string;
+  brewery_address: string;
+  brewery_lat: number;
+  brewery_lng: number;
+  delivery_street: string;
+  delivery_city: string;
+  total: number;
+  tip: number;
+  delivery_fee: number;
+  status: string;
+  items?: OrderItem[];
+}
+
+export interface DriverEarnings {
+  total_deliveries: number;
+  total_earned: number;
+  earned_today: number;
+  earned_this_week: number;
+}
+
+export const setDriverOnline = (isOnline: boolean) =>
+  request<{ isOnline: boolean }>('PATCH', '/drivers/online', { isOnline });
+
+export const updateDriverLocation = (lat: number, lng: number, orderId?: number | string) =>
+  request<{ ok: boolean }>('PATCH', '/drivers/location', { lat, lng, orderId });
+
+export const getAvailableOrders = () =>
+  request<DriverOrder[]>('GET', '/drivers/available-orders');
+
+export const acceptOrder = (orderId: number | string) =>
+  request<{ orderId: number | string; status: string }>('POST', `/drivers/accept-order/${orderId}`);
+
+export const verifyCustomerId = (orderId: number | string, manualVerified: boolean) =>
+  request<{ verified: boolean; message: string }>('POST', `/drivers/verify-id/${orderId}`, { manualVerified });
+
+export const getDriverEarnings = () =>
+  request<DriverEarnings>('GET', '/drivers/earnings');
+
 // ---- Real-time ----
 let socket: Socket | null = null;
 
