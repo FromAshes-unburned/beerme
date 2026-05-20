@@ -53,7 +53,7 @@ export default function BreweryPage() {
       const order = await placeOrder(
         id,
         cart.map((ci) => ({ menuItemId: ci.item.id, quantity: ci.qty })),
-        1,
+        null as unknown as number,
         tip,
         notes
       );
