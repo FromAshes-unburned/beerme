@@ -16,7 +16,10 @@ export default function AdminMenuPage() {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    getBrewery(BREWERY_ID).then((b) => setItems(b.menu ?? [])).finally(() => setLoading(false));
+    getBrewery(BREWERY_ID)
+      .then((b) => setItems(b.menu ?? []))
+      .catch(() => setError('Could not load menu. Make sure you are logged in.'))
+      .finally(() => setLoading(false));
   }, []);
 
   const set = (k: keyof MenuItem) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
