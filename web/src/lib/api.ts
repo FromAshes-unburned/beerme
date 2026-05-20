@@ -144,7 +144,7 @@ export interface Analytics {
   orders_by_status: Record<string, number>;
 }
 
-export const getBreweryAnalytics = (breweryId: number) =>
+export const getBreweryAnalytics = (breweryId: number | string) =>
   request<Analytics>('GET', `/breweries/${breweryId}/analytics`);
 
 // ---- Real-time ----
