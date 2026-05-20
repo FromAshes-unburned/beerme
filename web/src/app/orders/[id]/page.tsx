@@ -89,12 +89,12 @@ export default function OrderTrackingPage() {
                 {order.items?.map((item, i) => (
                   <div key={i} className="flex justify-between text-gray-600">
                     <span>{item.quantity}× {item.name}</span>
-                    <span>${((item.price ?? 0) * item.quantity).toFixed(2)}</span>
+                    <span>${(Number(item.price ?? 0) * item.quantity).toFixed(2)}</span>
                   </div>
                 ))}
                 <div className="flex justify-between font-semibold text-gray-900 border-t border-gray-100 pt-2 mt-1">
                   <span>Total</span>
-                  <span>${order.total?.toFixed(2)}</span>
+                  <span>${Number(order.total).toFixed(2)}</span>
                 </div>
               </div>
             </div>
