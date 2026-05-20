@@ -41,7 +41,7 @@ export default function BreweryPage() {
     }));
   }
 
-  const subtotal = cart.reduce((s, ci) => s + ci.item.price * ci.qty, 0);
+  const subtotal = cart.reduce((s, ci) => s + Number(ci.item.price) * ci.qty, 0);
   const fee = subtotal * 0.12;
   const delivery = 5;
   const total = subtotal + fee + delivery + tip;
@@ -95,7 +95,7 @@ export default function BreweryPage() {
                           <p className="font-medium">{item.name}</p>
                           {item.description && <p className="text-gray-500 text-sm">{item.description}</p>}
                           <div className="flex items-center gap-3 mt-1">
-                            <span className="text-amber-600 font-semibold">${item.price.toFixed(2)}</span>
+                            <span className="text-amber-600 font-semibold">${Number(item.price).toFixed(2)}</span>
                             {item.abv && <span className="text-xs text-gray-400">{item.abv}% ABV</span>}
                             <span className={`text-xs px-2 py-0.5 rounded-full ${STATUS_COLORS[item.available ? 'available' : 'unavailable']}`}>
                               {item.available ? 'Available' : 'Unavailable'}
@@ -132,7 +132,7 @@ export default function BreweryPage() {
                             <button onClick={() => removeFromCart(ci.item.id)} className="text-gray-400 hover:text-red-500 w-5 h-5 text-center">−</button>
                             <span className="w-4 text-center">{ci.qty}</span>
                             <button onClick={() => addToCart(ci.item)} className="text-gray-400 hover:text-amber-500 w-5 h-5 text-center">+</button>
-                            <span className="w-12 text-right font-medium">${(ci.item.price * ci.qty).toFixed(2)}</span>
+                            <span className="w-12 text-right font-medium">${(Number(ci.item.price) * ci.qty).toFixed(2)}</span>
                           </div>
                         </div>
                       ))}
