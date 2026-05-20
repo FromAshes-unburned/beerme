@@ -10,7 +10,7 @@ function loadGoogleMaps(key: string): Promise<void> {
   if (mapsPromise) return mapsPromise;
   mapsPromise = new Promise<void>((resolve, reject) => {
     const s = document.createElement('script');
-    s.src = `https://maps.googleapis.com/maps/api/js?key=${key}&libraries=marker&v=weekly`;
+    s.src = `https://maps.googleapis.com/maps/api/js?key=${key}&v=weekly`;
     s.async = true;
     s.onload = () => resolve();
     s.onerror = () => reject(new Error('Google Maps failed to load'));
@@ -28,41 +28,40 @@ interface Props {
 
 export default function DriverMap({ driverLat, driverLng, deliveryLat, deliveryLng }: Props) {
   const ref = useRef<HTMLDivElement>(null);
-  const markerRef = useRef<google.maps.marker.AdvancedMarkerElement | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const markerRef = useRef<any>(null);
   const mapRef = useRef<google.maps.Map | null>(null);
 
   useEffect(() => {
     if (!ref.current) return;
     const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY ?? '';
+    if (!apiKey) return;
 
     loadGoogleMaps(apiKey).then(() => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const MapsMarker = (google.maps as any).Marker;
+
       const map = new google.maps.Map(ref.current!, {
         center: { lat: driverLat, lng: driverLng },
         zoom: 14,
-        mapId: 'beerme_driver_map',
         disableDefaultUI: true,
         zoomControl: true,
       });
       mapRef.current = map;
 
       if (deliveryLat && deliveryLng) {
-        const dest = document.createElement('div');
-        dest.innerHTML = '📍';
-        dest.style.fontSize = '28px';
-        new google.maps.marker.AdvancedMarkerElement({
+        new MapsMarker({
           map,
           position: { lat: deliveryLat, lng: deliveryLng },
-          content: dest,
+          label: '📍',
+          title: 'Delivery address',
         });
       }
 
-      const car = document.createElement('div');
-      car.innerHTML = '🚗';
-      car.style.fontSize = '28px';
-      markerRef.current = new google.maps.marker.AdvancedMarkerElement({
+      markerRef.current = new MapsMarker({
         map,
         position: { lat: driverLat, lng: driverLng },
-        content: car,
+        title: 'Driver',
       });
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -71,7 +70,7 @@ export default function DriverMap({ driverLat, driverLng, deliveryLat, deliveryL
   useEffect(() => {
     if (!markerRef.current || !mapRef.current) return;
     const pos = { lat: driverLat, lng: driverLng };
-    markerRef.current.position = pos;
+    markerRef.current.setPosition(pos);
     mapRef.current.panTo(pos);
   }, [driverLat, driverLng]);
 

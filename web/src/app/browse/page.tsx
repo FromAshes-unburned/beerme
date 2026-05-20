@@ -81,7 +81,7 @@ export default function BrowsePage() {
 
           {/* Map */}
           {!loading && breweries.length > 0 && (
-            <div className="lg:w-96 h-80 lg:h-auto lg:sticky lg:top-20 rounded-2xl overflow-hidden shadow-sm">
+            <div className="lg:w-96 h-80 lg:h-[560px] lg:sticky lg:top-20 rounded-2xl overflow-hidden shadow-sm">
               <BreweryMap
                 breweries={breweries}
                 userLat={userLat}
