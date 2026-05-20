@@ -34,7 +34,7 @@ export default function AdminDashboard() {
 
   const active = orders.filter((o) => !['delivered', 'failed_id'].includes(o.status));
   const today = orders.filter((o) => new Date(o.created_at).toDateString() === new Date().toDateString());
-  const revenue = today.filter((o) => o.status === 'delivered').reduce((s, o) => s + (o.total ?? 0), 0);
+  const revenue = today.filter((o) => o.status === 'delivered').reduce((s, o) => s + Number(o.total ?? 0), 0);
 
   const stats = [
     { label: 'Active orders', value: active.length, icon: '📦' },
@@ -79,7 +79,7 @@ export default function AdminDashboard() {
                   <tr key={o.id}>
                     <td className="py-2.5 font-medium">#{o.id}</td>
                     <td className="py-2.5 text-gray-500">{new Date(o.created_at).toLocaleTimeString()}</td>
-                    <td className="py-2.5">${o.total?.toFixed(2)}</td>
+                    <td className="py-2.5">${Number(o.total).toFixed(2)}</td>
                     <td className="py-2.5">
                       <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${STATUS_STYLE[o.status] ?? 'bg-gray-100 text-gray-600'}`}>
                         {o.status.replace(/_/g, ' ')}

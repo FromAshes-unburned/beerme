@@ -85,7 +85,7 @@ export default function AdminOrdersPage() {
                 <tr key={o.id} className="hover:bg-gray-50 transition-colors">
                   <td className="px-6 py-4 font-semibold">#{o.id}</td>
                   <td className="px-6 py-4 text-gray-500">{new Date(o.created_at).toLocaleString()}</td>
-                  <td className="px-6 py-4">${o.total?.toFixed(2)}</td>
+                  <td className="px-6 py-4">${Number(o.total).toFixed(2)}</td>
                   <td className="px-6 py-4 text-gray-500">{o.items?.length ?? 0} item(s)</td>
                   <td className="px-6 py-4">
                     <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${STATUS_STYLE[o.status] ?? 'bg-gray-100'}`}>
