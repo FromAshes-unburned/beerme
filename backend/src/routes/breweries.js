@@ -145,6 +145,65 @@ router.patch('/:id/menu/:itemId', authenticate, requireRole('brewery_admin', 'pl
   }
 });
 
+// POST /api/breweries/:id/connect-stripe — start Stripe Connect onboarding for brewery
+router.post('/:id/connect-stripe', authenticate, requireRole('brewery_admin', 'platform_admin'), async (req, res) => {
+  try {
+    const breweryResult = await pool.query('SELECT * FROM breweries WHERE id = $1', [req.params.id]);
+    if (!breweryResult.rows.length) return res.status(404).json({ error: 'Brewery not found' });
+    const brewery = breweryResult.rows[0];
+
+    let accountId = brewery.stripe_account_id;
+
+    // Create Express account if not already connected
+    if (!accountId) {
+      const account = await stripe.accounts.create({
+        type: 'express',
+        country: 'US',
+        email: brewery.email || req.user.email,
+        business_type: 'company',
+        capabilities: { transfers: { requested: true }, card_payments: { requested: true } },
+        metadata: { beerme_brewery_id: req.params.id },
+      });
+      accountId = account.id;
+      await pool.query('UPDATE breweries SET stripe_account_id = $1 WHERE id = $2', [accountId, req.params.id]);
+    }
+
+    const origin = req.headers.origin || 'https://beermelou.com';
+    const accountLink = await stripe.accountLinks.create({
+      account: accountId,
+      refresh_url: `${origin}/admin/settings?stripe=refresh`,
+      return_url:  `${origin}/admin/settings?stripe=connected`,
+      type: 'account_onboarding',
+    });
+
+    res.json({ url: accountLink.url });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Could not start Stripe onboarding' });
+  }
+});
+
+// GET /api/breweries/:id/stripe-status — check Stripe Connect account status
+router.get('/:id/stripe-status', authenticate, requireRole('brewery_admin', 'platform_admin'), async (req, res) => {
+  try {
+    const breweryResult = await pool.query('SELECT stripe_account_id FROM breweries WHERE id = $1', [req.params.id]);
+    if (!breweryResult.rows.length) return res.status(404).json({ error: 'Not found' });
+    const { stripe_account_id } = breweryResult.rows[0];
+
+    if (!stripe_account_id) return res.json({ connected: false });
+
+    const account = await stripe.accounts.retrieve(stripe_account_id);
+    res.json({
+      connected: account.charges_enabled,
+      payoutsEnabled: account.payouts_enabled,
+      detailsSubmitted: account.details_submitted,
+      accountId: stripe_account_id,
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Could not check Stripe status' });
+  }
+});
+
 // GET /api/breweries/:id/analytics — revenue + order stats
 router.get('/:id/analytics', authenticate, requireRole('brewery_admin', 'platform_admin'), async (req, res) => {
   try {

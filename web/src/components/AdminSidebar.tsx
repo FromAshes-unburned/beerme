@@ -9,6 +9,7 @@ const links = [
   { href: '/admin/orders', label: '📦 Orders' },
   { href: '/admin/menu', label: '🍺 Menu' },
   { href: '/admin/analytics', label: '📈 Analytics' },
+  { href: '/admin/settings', label: '⚙️ Settings' },
 ];
 
 export default function AdminSidebar() {

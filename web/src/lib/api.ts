@@ -147,6 +147,12 @@ export interface Analytics {
 export const getBreweryAnalytics = (breweryId: number | string) =>
   request<Analytics>('GET', `/breweries/${breweryId}/analytics`);
 
+export const startStripeConnect = (breweryId: number | string) =>
+  request<{ url: string }>('POST', `/breweries/${breweryId}/connect-stripe`);
+
+export const getStripeStatus = (breweryId: number | string) =>
+  request<{ connected: boolean; payoutsEnabled: boolean; detailsSubmitted: boolean }>('GET', `/breweries/${breweryId}/stripe-status`);
+
 // ---- Driver ----
 export interface DriverOrder {
   id: number | string;
