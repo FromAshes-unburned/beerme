@@ -10,8 +10,10 @@ router.patch('/online', authenticate, requireRole('driver'), async (req, res) =>
   const { isOnline } = req.body;
   try {
     await pool.query(
-      'UPDATE driver_profiles SET is_online = $1 WHERE user_id = $2',
-      [isOnline, req.user.id]
+      `INSERT INTO driver_profiles (user_id, is_online)
+       VALUES ($1, $2)
+       ON CONFLICT (user_id) DO UPDATE SET is_online = $2`,
+      [req.user.id, isOnline]
     );
     res.json({ isOnline });
   } catch (err) {

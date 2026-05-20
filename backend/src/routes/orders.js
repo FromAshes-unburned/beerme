@@ -9,7 +9,7 @@ const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 
 // POST /api/orders — place an order (customer only, must be ID verified)
 router.post('/', authenticate, requireRole('customer'), requireIdVerified, async (req, res) => {
-  const { breweryId, items, deliveryAddressId, tip = 0, notes } = req.body;
+  const { breweryId, items, deliveryAddressId = null, tip = 0, notes } = req.body;
 
   if (!items || !items.length) {
     return res.status(400).json({ error: 'Cart is empty' });
@@ -46,32 +46,35 @@ router.post('/', authenticate, requireRole('customer'), requireIdVerified, async
       pricedItems.push({ menuItem, quantity: item.quantity, lineTotal });
     }
 
-    // Enforce minimum order
-    if (subtotal < brewery.min_order_amount) {
+    const minOrder = parseFloat(brewery.min_order_amount) || 0;
+    if (subtotal < minOrder) {
       return res.status(400).json({
-        error: `Minimum order is $${brewery.min_order_amount}`,
-        minimum: brewery.min_order_amount
+        error: `Minimum order is $${minOrder.toFixed(2)}`,
+        minimum: minOrder
       });
     }
 
-    const deliveryFee = brewery.delivery_fee;
-    const serviceFee = parseFloat((subtotal * 0.12).toFixed(2));  // 12% platform fee
-    const total = subtotal + deliveryFee + serviceFee + parseFloat(tip);
+    const deliveryFee = parseFloat(brewery.delivery_fee) || 0;
+    const serviceFee = parseFloat((subtotal * 0.12).toFixed(2));
+    const total = parseFloat((subtotal + deliveryFee + serviceFee + parseFloat(tip || 0)).toFixed(2));
 
-    // Create Stripe PaymentIntent
-    const paymentIntent = await stripe.paymentIntents.create({
-      amount: Math.round(total * 100),  // cents
-      currency: 'usd',
-      customer: req.user.stripe_customer_id,
-      metadata: {
-        beerme_user_id: req.user.id,
-        beerme_brewery_id: breweryId,
-      },
-      transfer_data: {
-        destination: brewery.stripe_account_id,
-        amount: Math.round((subtotal - serviceFee) * 100),
-      },
-    });
+    // Create Stripe PaymentIntent only if brewery has a connected Stripe account
+    let stripeIntentId = null;
+    let clientSecret = null;
+    if (brewery.stripe_account_id) {
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: Math.round(total * 100),
+        currency: 'usd',
+        customer: req.user.stripe_customer_id,
+        metadata: { beerme_user_id: req.user.id, beerme_brewery_id: breweryId },
+        transfer_data: {
+          destination: brewery.stripe_account_id,
+          amount: Math.round((subtotal - serviceFee) * 100),
+        },
+      });
+      stripeIntentId = paymentIntent.id;
+      clientSecret = paymentIntent.client_secret;
+    }
 
     // Create order record
     const orderResult = await client.query(
@@ -81,9 +84,9 @@ router.post('/', authenticate, requireRole('customer'), requireIdVerified, async
          stripe_payment_intent_id, customer_notes)
        VALUES ($1, $2, $3, 'pending', $4, $5, $6, $7, $8, $9, $10)
        RETURNING *`,
-      [req.user.id, breweryId, deliveryAddressId,
-       subtotal, deliveryFee, serviceFee, tip, total,
-       paymentIntent.id, notes]
+      [req.user.id, breweryId, deliveryAddressId || null,
+       subtotal, deliveryFee, serviceFee, tip || 0, total,
+       stripeIntentId, notes]
     );
     const order = orderResult.rows[0];
 
@@ -122,7 +125,7 @@ router.post('/', authenticate, requireRole('customer'), requireIdVerified, async
     res.status(201).json({
       orderId: order.id,
       orderNumber: order.order_number,
-      clientSecret: paymentIntent.client_secret,
+      clientSecret,
       total: order.total,
     });
   } catch (err) {
@@ -142,15 +145,15 @@ router.get('/:id', authenticate, async (req, res) => {
          json_agg(
            json_build_object(
              'id', oi.id, 'name', oi.name, 'quantity', oi.quantity,
-             'unitPrice', oi.unit_price, 'subtotal', oi.subtotal
+             'price', oi.unit_price, 'quantity', oi.quantity, 'subtotal', oi.subtotal
            )
          ) as items,
          b.name as brewery_name, b.address as brewery_address,
          da.street, da.city, da.state, da.zip
        FROM orders o
-       JOIN order_items oi ON oi.order_id = o.id
+       LEFT JOIN order_items oi ON oi.order_id = o.id
        JOIN breweries b ON b.id = o.brewery_id
-       JOIN delivery_addresses da ON da.id = o.delivery_address_id
+       LEFT JOIN delivery_addresses da ON da.id = o.delivery_address_id
        WHERE o.id = $1
        GROUP BY o.id, b.name, b.address, da.street, da.city, da.state, da.zip`,
       [req.params.id]
