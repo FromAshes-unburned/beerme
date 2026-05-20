@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import CustomerNav from '@/components/CustomerNav';
+import DriverMap from '@/components/DriverMap';
 import { getOrder, trackOrder, type Order } from '@/lib/api';
 
 const STEPS = ['pending', 'accepted', 'preparing', 'ready', 'driver_assigned', 'en_route', 'delivered'];
@@ -22,13 +23,14 @@ export default function OrderTrackingPage() {
   const { id } = useParams<{ id: string }>();
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
+  const [driverPos, setDriverPos] = useState<{ lat: number; lng: number } | null>(null);
 
   useEffect(() => {
     getOrder(id).then(setOrder).finally(() => setLoading(false));
 
     const unsub = trackOrder(
       id,
-      () => {},
+      (pos) => setDriverPos(pos),
       ({ status }) => setOrder((o) => o ? { ...o, status } : o)
     );
     return unsub;
@@ -71,6 +73,12 @@ export default function OrderTrackingPage() {
                 </div>
               )}
             </div>
+
+            {driverPos && ['driver_assigned', 'en_route'].includes(order.status) && (
+              <div className="mb-6">
+                <DriverMap driverLat={driverPos.lat} driverLng={driverPos.lng} />
+              </div>
+            )}
 
             <div className="bg-white rounded-2xl shadow-sm p-6">
               <h2 className="font-semibold mb-3">Order details</h2>
