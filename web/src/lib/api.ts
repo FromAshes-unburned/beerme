@@ -115,7 +115,7 @@ export interface Order {
 }
 
 export const placeOrder = (
-  breweryId: number,
+  breweryId: number | string,
   items: OrderItem[],
   deliveryAddressId: number,
   tip: number,
@@ -124,17 +124,17 @@ export const placeOrder = (
 
 export const getOrder = (id: number | string) => request<Order>('GET', `/orders/${id}`);
 export const getMyOrders = () => request<Order[]>('GET', '/orders');
-export const updateOrderStatus = (id: number, status: string, note?: string) =>
+export const updateOrderStatus = (id: number | string, status: string, note?: string) =>
   request<Order>('PATCH', `/orders/${id}/status`, { status, note });
 
 // ---- Brewery admin ----
-export const getBreweryOrders = (breweryId: number, status?: string) =>
+export const getBreweryOrders = (breweryId: number | string, status?: string) =>
   request<Order[]>('GET', `/breweries/${breweryId}/orders${status ? `?status=${status}` : ''}`);
 
-export const addMenuItem = (breweryId: number, item: Partial<MenuItem>) =>
+export const addMenuItem = (breweryId: number | string, item: Partial<MenuItem>) =>
   request<MenuItem>('POST', `/breweries/${breweryId}/menu`, item);
 
-export const updateMenuItem = (breweryId: number, itemId: number, updates: Partial<MenuItem>) =>
+export const updateMenuItem = (breweryId: number | string, itemId: number | string, updates: Partial<MenuItem>) =>
   request<MenuItem>('PATCH', `/breweries/${breweryId}/menu/${itemId}`, updates);
 
 export interface Analytics {
