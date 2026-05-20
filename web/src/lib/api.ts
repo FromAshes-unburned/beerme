@@ -75,6 +75,7 @@ export interface MenuItem {
   abv?: number;
   available: boolean;
   image_url?: string;
+  containerType?: string;
 }
 
 export interface Brewery {
@@ -91,7 +92,7 @@ export interface Brewery {
 export const getBreweries = (lat?: number, lng?: number) =>
   request<Brewery[]>('GET', `/breweries${lat && lng ? `?lat=${lat}&lng=${lng}` : ''}`);
 
-export const getBrewery = (id: number) =>
+export const getBrewery = (id: number | string) =>
   request<Brewery>('GET', `/breweries/${id}`);
 
 // ---- Orders ----
@@ -121,7 +122,7 @@ export const placeOrder = (
   notes?: string
 ) => request<Order>('POST', '/orders', { breweryId, items, deliveryAddressId, tip, notes });
 
-export const getOrder = (id: number) => request<Order>('GET', `/orders/${id}`);
+export const getOrder = (id: number | string) => request<Order>('GET', `/orders/${id}`);
 export const getMyOrders = () => request<Order[]>('GET', '/orders');
 export const updateOrderStatus = (id: number, status: string, note?: string) =>
   request<Order>('PATCH', `/orders/${id}/status`, { status, note });

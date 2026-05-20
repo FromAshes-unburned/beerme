@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { getBreweryAnalytics, type Analytics } from '@/lib/api';
 
-const BREWERY_ID = 1;
+const BREWERY_ID = '45f5cef8-fddf-4e05-96b6-3fe38e251897';
 
 const STATUS_LABELS: Record<string, string> = {
   pending:         'Pending',

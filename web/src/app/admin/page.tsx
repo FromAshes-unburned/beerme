@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { getMe, getBreweryOrders, type Order } from '@/lib/api';
 
-const BREWERY_ID = 1; // replaced at runtime with the logged-in admin's brewery
+const BREWERY_ID = '45f5cef8-fddf-4e05-96b6-3fe38e251897'; // replaced at runtime with the logged-in admin's brewery
 
 const STATUS_STYLE: Record<string, string> = {
   pending:         'bg-yellow-100 text-yellow-700',

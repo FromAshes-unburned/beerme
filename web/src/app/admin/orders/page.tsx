@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { getBreweryOrders, updateOrderStatus, type Order } from '@/lib/api';
 
-const BREWERY_ID = 1;
+const BREWERY_ID = '45f5cef8-fddf-4e05-96b6-3fe38e251897';
 
 const STATUS_STYLE: Record<string, string> = {
   pending:         'bg-yellow-100 text-yellow-700',

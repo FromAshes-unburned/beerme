@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { getBrewery, addMenuItem, updateMenuItem, type MenuItem } from '@/lib/api';
 
-const BREWERY_ID = 1;
+const BREWERY_ID = '45f5cef8-fddf-4e05-96b6-3fe38e251897';
 
 const BLANK: Partial<MenuItem> = { name: '', description: '', price: 0, category: 'Beer', abv: undefined, available: true };
 
@@ -97,7 +97,7 @@ export default function AdminMenuPage() {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Container type</label>
-              <select value={(form as Record<string, unknown>).container_type as string ?? ''} onChange={(e) => setForm((f) => ({ ...f, container_type: e.target.value }))}
+              <select value={(form as Record<string, unknown>).containerType as string ?? ''} onChange={(e) => setForm((f) => ({ ...f, containerType: e.target.value }))}
                 className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400">
                 <option value="">Select…</option>
                 <option value="can_4pack">Can 4-pack</option>
