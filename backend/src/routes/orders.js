@@ -9,8 +9,7 @@ const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 
 // POST /api/orders — place an order (customer only, must be ID verified)
 router.post('/', authenticate, requireRole('customer'), requireIdVerified, async (req, res) => {
-  const { breweryId, items, deliveryAddressId = null, tip = 0, notes } = req.body;
-  console.log('ORDER REQUEST:', JSON.stringify({ breweryId, items, deliveryAddressId, tip }));
+  const { breweryId, items, tip = 0, notes, deliveryAddress } = req.body;
 
   if (!items || !items.length) {
     return res.status(400).json({ error: 'Cart is empty' });
@@ -45,6 +44,18 @@ router.post('/', authenticate, requireRole('customer'), requireIdVerified, async
       const lineTotal = menuItem.price * item.quantity;
       subtotal += lineTotal;
       pricedItems.push({ menuItem, quantity: item.quantity, lineTotal });
+    }
+
+    // Save delivery address if provided
+    let deliveryAddressId = null;
+    if (deliveryAddress?.street) {
+      const addrResult = await client.query(
+        `INSERT INTO delivery_addresses (user_id, street, city, state, zip)
+         VALUES ($1, $2, $3, $4, $5) RETURNING id`,
+        [req.user.id, deliveryAddress.street, deliveryAddress.city,
+         deliveryAddress.state || 'KY', deliveryAddress.zip || '']
+      );
+      deliveryAddressId = addrResult.rows[0].id;
     }
 
     const minOrder = parseFloat(brewery.min_order_amount) || 0;

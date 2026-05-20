@@ -3,9 +3,11 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import CustomerNav from '@/components/CustomerNav';
+import PaymentModal from '@/components/PaymentModal';
 import { getBrewery, placeOrder, type Brewery, type MenuItem } from '@/lib/api';
 
 interface CartItem { item: MenuItem; qty: number }
+interface Address { street: string; city: string; state: string; zip: string }
 
 const STATUS_COLORS: Record<string, string> = {
   available: 'bg-green-100 text-green-700',
@@ -19,8 +21,10 @@ export default function BreweryPage() {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [tip, setTip] = useState(2);
   const [notes, setNotes] = useState('');
+  const [address, setAddress] = useState<Address>({ street: '', city: 'Louisville', state: 'KY', zip: '' });
   const [placing, setPlacing] = useState(false);
   const [error, setError] = useState('');
+  const [payment, setPayment] = useState<{ clientSecret: string; orderId: string | number; total: number } | null>(null);
 
   useEffect(() => {
     getBrewery(id).then(setBrewery).catch(() => setError('Could not load brewery.'));
@@ -43,21 +47,34 @@ export default function BreweryPage() {
 
   const subtotal = cart.reduce((s, ci) => s + Number(ci.item.price) * ci.qty, 0);
   const fee = subtotal * 0.12;
-  const delivery = 5;
+  const delivery = Number(brewery?.delivery_fee ?? 5);
   const total = subtotal + fee + delivery + tip;
 
+  const addressComplete = address.street.trim() && address.zip.trim();
+
   async function handleOrder() {
+    if (!addressComplete) { setError('Please enter your delivery address.'); return; }
     setPlacing(true);
     setError('');
     try {
-      const order = await placeOrder(
+      const result = await placeOrder(
         id,
         cart.map((ci) => ({ menuItemId: ci.item.id, quantity: ci.qty })),
         null as unknown as number,
         tip,
-        notes
+        notes,
+        address
       );
-      router.push(`/orders/${order.id}`);
+
+      // If brewery has Stripe connected, show payment modal
+      if ((result as unknown as { clientSecret?: string }).clientSecret) {
+        const r = result as unknown as { clientSecret: string; id: string | number; total: number };
+        setPayment({ clientSecret: r.clientSecret, orderId: r.id, total: r.total });
+        setPlacing(false);
+      } else {
+        // No Stripe account yet — order placed, skip payment for now
+        router.push(`/orders/${result.id}`);
+      }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Could not place order');
       setPlacing(false);
@@ -69,6 +86,14 @@ export default function BreweryPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <CustomerNav />
+      {payment && (
+        <PaymentModal
+          clientSecret={payment.clientSecret}
+          total={payment.total}
+          onSuccess={() => router.push(`/orders/${payment.orderId}`)}
+          onCancel={() => { setPayment(null); }}
+        />
+      )}
       <main className="max-w-5xl mx-auto px-4 py-8">
         {error && <p className="text-red-500 mb-4">{error}</p>}
         {!brewery ? (
@@ -137,6 +162,32 @@ export default function BreweryPage() {
                         </div>
                       ))}
                     </div>
+
+                    {/* Delivery address */}
+                    <div className="border-t border-gray-100 pt-3 mb-3">
+                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Delivery address</p>
+                      <input
+                        placeholder="Street address *"
+                        value={address.street}
+                        onChange={(e) => setAddress((a) => ({ ...a, street: e.target.value }))}
+                        className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm mb-2 focus:outline-none focus:ring-2 focus:ring-amber-400"
+                      />
+                      <div className="flex gap-2">
+                        <input
+                          placeholder="City"
+                          value={address.city}
+                          onChange={(e) => setAddress((a) => ({ ...a, city: e.target.value }))}
+                          className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
+                        />
+                        <input
+                          placeholder="ZIP *"
+                          value={address.zip}
+                          onChange={(e) => setAddress((a) => ({ ...a, zip: e.target.value }))}
+                          className="w-20 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
+                        />
+                      </div>
+                    </div>
+
                     <div className="border-t border-gray-100 pt-3 text-sm space-y-1 text-gray-500">
                       <div className="flex justify-between"><span>Subtotal</span><span>${subtotal.toFixed(2)}</span></div>
                       <div className="flex justify-between"><span>Service fee (12%)</span><span>${fee.toFixed(2)}</span></div>

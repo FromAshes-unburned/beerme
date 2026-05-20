@@ -86,6 +86,7 @@ export interface Brewery {
   lng: number;
   distance_miles?: number;
   logo_url?: string;
+  delivery_fee?: number;
   menu?: MenuItem[];
 }
 
@@ -117,10 +118,11 @@ export interface Order {
 export const placeOrder = (
   breweryId: number | string,
   items: OrderItem[],
-  deliveryAddressId: number,
+  deliveryAddressId: number | null,
   tip: number,
-  notes?: string
-) => request<Order>('POST', '/orders', { breweryId, items, deliveryAddressId, tip, notes });
+  notes?: string,
+  deliveryAddress?: { street: string; city: string; state: string; zip: string }
+) => request<Order>('POST', '/orders', { breweryId, items, tip, notes, deliveryAddress });
 
 export const getOrder = (id: number | string) => request<Order>('GET', `/orders/${id}`);
 export const getMyOrders = () => request<Order[]>('GET', '/orders');
