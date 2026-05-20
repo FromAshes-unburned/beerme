@@ -10,6 +10,7 @@ const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 // POST /api/orders — place an order (customer only, must be ID verified)
 router.post('/', authenticate, requireRole('customer'), requireIdVerified, async (req, res) => {
   const { breweryId, items, deliveryAddressId = null, tip = 0, notes } = req.body;
+  console.log('ORDER REQUEST:', JSON.stringify({ breweryId, items, deliveryAddressId, tip }));
 
   if (!items || !items.length) {
     return res.status(400).json({ error: 'Cart is empty' });
