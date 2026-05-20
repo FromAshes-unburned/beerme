@@ -124,6 +124,7 @@ router.post('/', authenticate, requireRole('customer'), requireIdVerified, async
     }
 
     res.status(201).json({
+      id: order.id,
       orderId: order.id,
       orderNumber: order.order_number,
       clientSecret,
