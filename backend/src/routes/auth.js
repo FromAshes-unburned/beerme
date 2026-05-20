@@ -119,6 +119,16 @@ router.post('/start-id-verification', authenticate, async (req, res) => {
   }
 });
 
+// POST /api/auth/dev/verify — manually mark a user as ID-verified (for testing only)
+router.post('/dev/verify', authenticate, async (req, res) => {
+  try {
+    await pool.query('UPDATE users SET id_verified = TRUE WHERE id = $1', [req.user.id]);
+    res.json({ ok: true, message: 'User marked as ID-verified' });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed' });
+  }
+});
+
 // GET /api/auth/me
 router.get('/me', authenticate, (req, res) => {
   const { id, email, full_name, role, id_verified, phone } = req.user;
